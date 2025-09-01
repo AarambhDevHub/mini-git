@@ -1,364 +1,480 @@
-# Mini Git - A Git Implementation in Rust 🦀
+# Mini Git - Local Git Implementation in Rust 🦀
 
-A complete, educational implementation of Git version control system written in Rust. Mini Git demonstrates the core concepts and internal workings of Git, including object storage, branching, merging, and distributed workflow operations.
+A complete, educational implementation of Git version control system written in Rust. Mini Git demonstrates Git's core concepts and internal workings through **local repository operations**, making it perfect for understanding how Git really works under the hood.
 
-## 🌟 Features
+## 🎯 Educational Focus: Local-Only Implementation
 
-### Core Git Operations
-- ✅ **Repository Management**: `init`, `clone` (local repositories)
-- ✅ **Staging & Committing**: `add`, `commit`, `status`
-- ✅ **History & Logging**: `log`, `diff`
-- ✅ **Branching**: `branch`, `checkout`, `merge`
-- ✅ **Remote Operations**: `remote`, `push`, `pull` (local repositories)
-- ✅ **Stashing**: `stash push/pop/list/show/drop/clear`
+**Mini Git is intentionally designed for local operations only.** This design choice allows you to:
+- 🧠 **Learn Git internals** without network protocol complexity
+- 🔍 **See exactly how Git works** with object stores, trees, and commits
+- 🏗️ **Understand distributed concepts** through local repository simulation
+- 📚 **Master Git fundamentals** before tackling network implementations
 
-### Advanced Features
-- 🗄️ **Object Store**: Git-compatible object storage with compression
-- 🌳 **Tree Structure**: Proper Git tree and blob object management
-- 🔀 **Three-way Merge**: Intelligent merge conflict detection
-- 📦 **Index Management**: Staging area implementation
-- 🎯 **Hash-based Integrity**: SHA-1 content addressing
-- 🔄 **Distributed Workflow**: Multi-repository synchronization
+## ✅ What Mini Git Does (Fully Functional)
+
+### Complete Local Git Experience
+- **Repository Management**: `init`, `clone` (local paths)
+- **Version Control**: `add`, `commit`, `status`, `log`, `diff`
+- **Branching & Merging**: `branch`, `checkout`, `merge` with conflict detection
+- **Local Remotes**: `push`/`pull` between local repositories
+- **Stashing**: `stash push/pop/list/show/drop/clear`
+- **Remote Management**: Add/manage local repository references
+
+### Git-Compatible Object Storage
+- SHA-1 content addressing
+- Zlib-compressed objects
+- Tree and blob management
+- Complete commit history
+
+## ❌ What Mini Git Doesn't Do
+
+### Network Operations Not Implemented
+- ❌ **GitHub/GitLab**: `https://github.com/user/repo.git`
+- ❌ **SSH Remotes**: `git@github.com:user/repo.git`
+- ❌ **HTTP/HTTPS**: Any network-based remote URLs
+- ❌ **Git Protocols**: `git://` protocol support
+
+**For network operations, use standard Git alongside Mini Git.**
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Rust 1.70 or higher
-- Cargo (comes with Rust)
-
 ### Installation
-
 ```bash
-# Clone the repository
-git clone <repository-url>
+git clone <this-repository>
 cd mini_git
-
-# Build the project
 cargo build --release
-
-# The executable will be at ./target/release/mini_git
 ```
 
 ### Basic Usage
-
 ```bash
-# Initialize a new repository
+# Initialize a repository
 ./target/release/mini_git init
 
-# Add files to staging area
-echo "Hello, World!" > hello.txt
+# Add and commit files
+echo "Hello, Mini Git!" > hello.txt
 ./target/release/mini_git add .
-
-# Commit changes
-./target/release/mini_git commit -m "Initial commit" --author "Your Name <your.email@example.com>"
+./target/release/mini_git commit -m "First commit" --author "You <you@example.com>"
 
 # View history
 ./target/release/mini_git log
-
-# Check status
 ./target/release/mini_git status
 ```
 
-## 📚 Comprehensive Examples
+## 🏗️ Architecture & Design
 
-### Basic Workflow
+### System Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                          Mini Git Architecture                      │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   User Interface │    │   Commands      │    │   Core Engine   │
+│                 │    │                 │    │                 │
+│  ┌─────────────┐│    │  ┌─────────────┐│    │  ┌─────────────┐│
+│  │    CLI      ││────┤  │    init     ││    │  │ Object Store││
+│  │   (clap)    ││    │  │    add      ││    │  │   (SHA-1)   ││
+│  └─────────────┘│    │  │   commit    ││    │  └─────────────┘│
+│                 │    │  │   status    ││    │                 │
+│  ┌─────────────┐│    │  │    log      ││    │  ┌─────────────┐│
+│  │ Subcommands ││    │  │   branch    ││────┤  │ Repository  ││
+│  │   Parser    ││    │  │  checkout   ││    │  │   Utils     ││
+│  └─────────────┘│    │  │   merge     ││    │  └─────────────┘│
+└─────────────────┘    │  │   clone     ││    │                 │
+                       │  │   push      ││    │  ┌─────────────┐│
+                       │  │   pull      ││    │  │   Index     ││
+                       │  │  remote     ││    │  │ Management  ││
+                       │  │   stash     ││    │  └─────────────┘│
+                       │  │   diff      ││    └─────────────────┘
+                       │  └─────────────┘│
+                       └─────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Data Flow Architecture                       │
+└─────────────────────────────────────────────────────────────────────┘
+
+Working Directory     Index (Staging)      Object Database      References
+─────────────────     ───────────────      ───────────────      ──────────
+
+┌─────────────┐       ┌─────────────┐      ┌─────────────┐      ┌─────────┐
+│   file1.txt │       │  Staged     │      │   Objects   │      │  HEAD   │
+│   file2.py  │ ────► │  Changes    │ ───► │             │ ◄──► │         │
+│   README.md │  add  │             │commit│ ┌─────────┐ │      │ refs/   │
+│     ...     │       │ JSON Index  │      │ │  Blob   │ │      │ heads/  │
+└─────────────┘       │   Format    │      │ │  Tree   │ │      │  main   │
+                      └─────────────┘      │ │ Commit  │ │      │ feature │
+                                           │ └─────────┘ │      └─────────┘
+                      ┌─────────────┐      │             │
+                      │  Stash      │      │ Compressed  │      ┌─────────┐
+                      │  Storage    │ ───► │ (zlib)      │      │ Remote  │
+                      │             │      │ SHA-1 Hash  │      │ Tracking│
+                      └─────────────┘      └─────────────┘      └─────────┘
+```
+
+### Object Store Structure
+```
+.mini_git/
+├── objects/                    # Git Object Database
+│   ├── 12/                    # Directory: First 2 chars of SHA-1
+│   │   └── 3456789abcdef...   # File: Remaining 38 chars (zlib compressed)
+│   ├── ab/
+│   │   ├── cdef1234567...     # Blob object (file content)
+│   │   └── 9876543210a...     # Tree object (directory structure)
+│   └── de/
+│       └── f123456789b...     # Commit object (snapshot + metadata)
+│
+├── refs/                      # Reference Storage
+│   ├── heads/                 # Local branch pointers
+│   │   ├── main              # Points to commit SHA-1
+│   │   └── feature           # Points to commit SHA-1
+│   └── remotes/              # Remote tracking branches
+│       └── origin/           # Remote named 'origin'
+│           ├── main          # Tracks remote main branch
+│           └── feature       # Tracks remote feature branch
+│
+├── index                     # Staging Area (JSON format)
+├── HEAD                      # Current branch pointer
+├── config                    # Repository configuration
+└── stash                     # Stashed changes (JSON array)
+```
+
+### Data Model Relationships
+
+```
+Commit Object                 Tree Object                 Blob Object
+─────────────                ─────────────               ─────────────
+
+┌─────────────────┐          ┌─────────────────┐         ┌─────────────┐
+│ hash: abc123... │          │ hash: def456... │         │ hash: 789xyz│
+│ parent: xyz789..│ ────────►│ entries: {      │ ──────► │ content:    │
+│ tree: def456... │          │   "file.txt": { │         │ "Hello\n"   │
+│ author: "Name"  │          │     mode: "644" │         │             │
+│ message: "Fix"  │          │     hash: 789xyz│         │             │
+│ timestamp: ...  │          │     is_file: T  │         │             │
+└─────────────────┘          │   },            │         └─────────────┘
+        │                    │   "src/": {     │
+        │                    │     mode: "040" │         ┌─────────────┐
+        │                    │     hash: sub123│────────►│ hash: sub123│
+        └───► Parent         │     is_file: F  │         │ entries: {  │
+              Commit         │   }             │         │   "main.rs" │
+                            │ }               │         │   ...       │
+                            └─────────────────┘         └─────────────┘
+                                     │
+                            ┌─────────────────┐
+                            │ Subdirectory    │
+                            │ Tree Object     │
+                            └─────────────────┘
+```
+
+### Command Execution Flow
+
+```
+User Input → CLI Parser → Command Router → Core Operations → Storage
+
+┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
+│ mini_git    │   │    Clap     │   │  Command    │   │  Object     │
+│ add file.txt│──►│   Parser    │──►│  Executor   │──►│  Store      │
+└─────────────┘   └─────────────┘   └─────────────┘   └─────────────┘
+                                           │
+Example Flow:                              ▼
+                  ┌─────────────────────────────────────────────────────┐
+1. add file.txt   │                Command Processing                  │
+   │              └─────────────────────────────────────────────────────┘
+   ▼                                      │
+2. Parse args     ┌─────────────┐         ▼         ┌─────────────┐
+   │              │ Read File   │    ┌─────────────┐ │ Update      │
+   ▼              │ Content     │───►│ Calculate   │►│ Index       │
+3. Load file      └─────────────┘    │ SHA-1 Hash  │ │ (Staging)   │
+   │                                 └─────────────┘ └─────────────┘
+   ▼                                        │
+4. Hash content   ┌─────────────┐           ▼         ┌─────────────┐
+   │              │ Compress    │    ┌─────────────┐  │ Success     │
+   ▼              │ with zlib   │───►│ Store Blob  │─►│ Message     │
+5. Store object   └─────────────┘    │ Object      │  └─────────────┘
+   │                                 └─────────────┘
+   ▼
+6. Update index
+```
+
+## 📖 Complete Local Workflows
+
+### 1. Basic Development
 ```bash
-# Create a new project
-mkdir my_project
-cd my_project
+# Start a project
+mkdir my_project && cd my_project
 mini_git init
 
-# Create and track files
+# Create files and track changes
 echo "# My Project" > README.md
 echo "fn main() { println!(\"Hello!\"); }" > main.rs
 mini_git add .
-mini_git commit -m "Initial project setup"
+mini_git commit -m "Initial commit"
 
-# Check the project status
+# Check project state
 mini_git status
 mini_git log
 ```
 
-### Branch Management
+### 2. Feature Branch Development
 ```bash
-# Create and switch to a new branch
+# Create feature branch
 mini_git branch feature-auth
 mini_git checkout feature-auth
 
-# Work on the feature
+# Develop feature
 echo "Authentication module" > auth.rs
 mini_git add auth.rs
-mini_git commit -m "Add authentication module"
+mini_git commit -m "Add authentication"
 
-# Switch back to main and merge
+# Merge back to main
 mini_git checkout main
 mini_git merge feature-auth
-
-# Clean up
 mini_git branch feature-auth --delete
 ```
 
-### Distributed Development (Local)
+### 3. Simulated Team Development (Local)
 ```bash
-# Create a central repository
-mkdir central_repo
-cd central_repo
+# Create "central" repository
+mkdir team_project && cd team_project
 mini_git init
-echo "Project started" > README.md
-mini_git add . && mini_git commit -m "Initial commit"
+echo "Team Project" > README.md
+mini_git add . && mini_git commit -m "Project start"
 
-# Developer A clones and contributes
-cd ..
-mini_git clone central_repo developer_a
-cd developer_a
-echo "Feature A" > feature_a.txt
-mini_git add . && mini_git commit -m "Add Feature A"
+# Developer A
+cd .. && mini_git clone team_project dev_alice
+cd dev_alice
+echo "Alice's feature" > feature_a.py
+mini_git add . && mini_git commit -m "Add feature A"
 mini_git push origin main
 
-# Developer B clones, pulls latest, and contributes
-cd ..
-mini_git clone central_repo developer_b
-cd developer_b
-mini_git pull origin main  # Gets Feature A
-echo "Feature B" > feature_b.txt
-mini_git add . && mini_git commit -m "Add Feature B"
+# Developer B
+cd .. && mini_git clone team_project dev_bob
+cd dev_bob
+mini_git pull origin main  # Gets Alice's changes
+echo "Bob's feature" > feature_b.py
+mini_git add . && mini_git commit -m "Add feature B"
 mini_git push origin main
 
-# Developer A pulls latest changes
-cd ../developer_a
+# Alice syncs latest changes
+cd ../dev_alice
 mini_git pull origin main
-ls  # See both features
+ls  # See both features: feature_a.py, feature_b.py
 ```
 
-### Stash Workflow
+### 4. Stash Workflow
 ```bash
-# Make some changes
-echo "Work in progress..." >> important_file.txt
+# Working on something...
+echo "Work in progress..." > unfinished.txt
+mini_git add unfinished.txt
 
-# Need to switch branches quickly? Stash your work
-mini_git stash push -m "WIP: updating important file"
-
-# Switch branches, do other work...
+# Need to switch context quickly
+mini_git stash push -m "WIP: new feature"
 mini_git checkout other-branch
-# ... do work ...
 
-# Come back and restore your changes
+# Later, restore work
 mini_git checkout main
-mini_git stash pop  # Restores and removes from stash
+mini_git stash pop  # Restores unfinished.txt
 
-# Or keep the stash and just apply it
+# Or manage multiple stashes
 mini_git stash list
-mini_git stash show
-mini_git stash apply  # Applies but keeps in stash
+mini_git stash show 0
+mini_git stash drop 0
 ```
 
-### Remote Management
+## 🔧 Commands Reference
+
+### Repository Operations
 ```bash
-# Add remotes for different purposes
-mini_git remote add origin ../main_repo
-mini_git remote add backup /path/to/backup/repo
-mini_git remote add fork ../forked_repo
-
-# List remotes with URLs
-mini_git remote -v
-
-# Change remote URLs
-mini_git remote set-url origin ../new_location
-
-# Remove a remote
-mini_git remote remove backup
+mini_git init                    # Initialize repository
+mini_git clone <local_path> <dir> # Clone local repository
+mini_git status                  # Show working directory status
 ```
 
-## 🏗️ Architecture
-
-### Object Store
-Mini Git implements Git's object storage model:
-
-```
-.mini_git/
-├── objects/           # Object database
-│   ├── 12/           # First 2 chars of hash
-│   │   └── 3456789...# Remaining hash (zlib compressed)
-│   └── ab/
-│       └── cdef123...
-├── refs/             # Reference storage
-│   ├── heads/        # Branch references
-│   │   ├── main
-│   │   └── feature
-│   └── remotes/      # Remote tracking branches
-│       └── origin/
-│           └── main
-├── index             # Staging area
-├── HEAD              # Current branch pointer
-└── config            # Repository configuration
+### Staging & Committing
+```bash
+mini_git add <files>             # Stage files
+mini_git add .                   # Stage all files
+mini_git commit -m "message"     # Create commit
+mini_git commit -m "msg" --author "Name <email>"  # With author
 ```
 
-### Object Types
-1. **Blob**: File content storage
-2. **Tree**: Directory structure and file metadata
-3. **Commit**: Snapshot with metadata and parent references
+### History & Inspection
+```bash
+mini_git log                     # Show commit history
+mini_git log --max-count 5       # Limit number of commits
+mini_git diff                    # Show unstaged changes
+mini_git diff <files>            # Diff specific files
+```
 
-### Key Components
+### Branching
+```bash
+mini_git branch                  # List branches
+mini_git branch <name>           # Create branch
+mini_git branch <name> --delete  # Delete branch
+mini_git checkout <branch>       # Switch branches
+mini_git merge <branch>          # Merge branch into current
+```
 
-#### Object Store (`src/object_store.rs`)
-- Hash-based content addressing using SHA-1
-- Zlib compression for efficient storage
-- JSON serialization for object metadata
+### Local Remotes
+```bash
+mini_git remote                  # List remotes
+mini_git remote -v               # List with URLs
+mini_git remote add <name> <local_path>  # Add local remote
+mini_git remote remove <name>    # Remove remote
+mini_git remote set-url <name> <path>    # Change remote URL
+mini_git push <remote> <branch>  # Push to local remote
+mini_git pull <remote> <branch>  # Pull from local remote
+```
 
-#### Commands (`src/commands/`)
-- Modular command implementation
-- Each Git command as a separate module
-- Consistent error handling and user feedback
+### Stashing
+```bash
+mini_git stash                   # Stash current changes
+mini_git stash push -m "message" # Stash with message
+mini_git stash list              # List all stashes
+mini_git stash show              # Show latest stash
+mini_git stash pop               # Apply and remove latest stash
+mini_git stash drop              # Delete a stash
+mini_git stash clear             # Delete all stashes
+```
 
-#### Repository Management (`src/utils.rs`)
-- Repository detection and initialization
-- Index management and manipulation
-- Branch and reference utilities
+## 🧪 Testing
+
+### Automated Test Suite
+```bash
+chmod +x test_minigit.sh
+./test_minigit.sh
+```
+
+Tests cover:
+- ✅ Basic repository operations
+- ✅ Branching and merging
+- ✅ Local clone/push/pull workflows
+- ✅ Stash functionality
+- ✅ Remote management
+- ✅ Object store integrity
+- ✅ Error handling
+
+### Manual Testing
+```bash
+# Quick functionality test
+mkdir test && cd test
+mini_git init
+echo "test" > file.txt
+mini_git add . && mini_git commit -m "test"
+mini_git log
+```
+
+## 🌐 Working with Network Remotes
+
+Since Mini Git is local-only, here's how to work with GitHub/GitLab:
+
+### Option 1: Develop Locally, Publish with Git
+```bash
+# Develop with Mini Git
+mini_git add . && mini_git commit -m "Feature complete"
+
+# Publish with standard Git
+git init  # Initialize Git in same directory
+git remote add origin https://github.com/user/repo.git
+git add . && git commit -m "Feature complete"
+git push origin main
+```
+
+### Option 2: Hybrid Workflow
+```bash
+# Use Mini Git for local development and learning
+mini_git branch feature && mini_git checkout feature
+mini_git add . && mini_git commit -m "Local development"
+
+# Use Git for collaboration
+git checkout main && git pull origin main
+git merge feature && git push origin main
+```
 
 ## 📁 Project Structure
 
 ```
 mini_git/
 ├── src/
-│   ├── main.rs              # CLI interface and argument parsing
-│   ├── lib.rs               # Core types and structures
-│   ├── object_store.rs      # Git object storage implementation
-│   ├── utils.rs             # Repository utilities and helpers
-│   └── commands/            # Git command implementations
-│       ├── mod.rs           # Command module exports
-│       ├── init.rs          # Repository initialization
-│       ├── add.rs           # Staging area management
-│       ├── commit.rs        # Commit creation
-│       ├── status.rs        # Working directory status
-│       ├── log.rs           # Commit history
-│       ├── branch.rs        # Branch management
-│       ├── checkout.rs      # Branch switching and file restoration
-│       ├── merge.rs         # Three-way merge implementation
-│       ├── diff.rs          # File difference calculation
-│       ├── clone.rs         # Repository cloning
-│       ├── push.rs          # Publishing changes
-│       ├── pull.rs          # Fetching and merging changes
-│       ├── remote.rs        # Remote repository management
-│       └── stash.rs         # Temporary change storage
-├── Cargo.toml               # Project configuration and dependencies
-└── README.md               # This file
+│   ├── main.rs           # CLI interface
+│   ├── lib.rs            # Core types
+│   ├── object_store.rs   # Git object storage
+│   ├── utils.rs          # Repository utilities
+│   └── commands/         # Command implementations
+│       ├── init.rs       # Repository initialization
+│       ├── add.rs        # Staging operations
+│       ├── commit.rs     # Commit creation
+│       ├── status.rs     # Working directory status
+│       ├── log.rs        # History viewing
+│       ├── branch.rs     # Branch management
+│       ├── checkout.rs   # Branch switching
+│       ├── merge.rs      # Three-way merge
+│       ├── diff.rs       # File differences
+│       ├── clone.rs      # Local cloning
+│       ├── push.rs       # Local push operations
+│       ├── pull.rs       # Local pull operations
+│       ├── remote.rs     # Remote management
+│       └── stash.rs      # Stash operations
+├── Cargo.toml           # Dependencies
+├── test_minigit.sh      # Test suite
+└── README.md           # This file
 ```
 
-## 🧪 Testing
+## 🎓 Learning Objectives
 
-### Automated Testing
-Run the comprehensive test suite:
+By using Mini Git, you'll understand:
 
-```bash
-# Make the test script executable
-chmod +x test_minigit.sh
-
-# Run all tests
-./test_minigit.sh
-```
-
-The test suite covers:
-- Basic repository operations
-- Branching and merging
-- Stashing functionality
-- Clone and remote operations
-- Distributed workflows
-- Error handling
-- Object store integrity
-
-### Manual Testing
-```bash
-# Build and test basic functionality
-cargo build --release
-
-# Test basic operations
-mkdir test_repo && cd test_repo
-../target/release/mini_git init
-echo "test" > file.txt
-../target/release/mini_git add .
-../target/release/mini_git commit -m "Test commit"
-../target/release/mini_git log
-```
-
-## 🎯 Educational Goals
-
-This project demonstrates:
-
-1. **Git Internals**: How Git stores and manages data
-2. **Content-Addressable Storage**: Hash-based data integrity
-3. **Directed Acyclic Graph**: Commit history representation
-4. **Three-Way Merge**: Conflict resolution algorithms
-5. **Distributed Version Control**: Multi-repository workflows
-6. **Rust Programming**: Systems programming in Rust
+1. **Git Object Model**: How commits, trees, and blobs work
+2. **Content Addressing**: Why Git uses SHA-1 hashes
+3. **Distributed Architecture**: How multiple repositories sync
+4. **Merge Algorithms**: Three-way merge and conflict resolution
+5. **Index Mechanics**: How the staging area works
+6. **Reference Management**: Branches, tags, and HEAD
+7. **Data Integrity**: How Git ensures data consistency
 
 ## 🔧 Dependencies
 
 ```toml
 [dependencies]
-sha1 = "0.10"           # SHA-1 hashing
-serde = "1.0"           # Serialization
-serde_json = "1.0"      # JSON support
-chrono = "0.4"          # Date/time handling
-clap = "4.0"            # Command-line parsing
-walkdir = "2.3"         # Directory traversal
-flate2 = "1.0"          # Zlib compression
+sha1 = "0.10"           # SHA-1 hashing for content addressing
+serde = "1.0"           # Serialization framework
+serde_json = "1.0"      # JSON support for objects
+chrono = "0.4"          # Date and time handling
+clap = "4.0"            # Command-line argument parsing
+walkdir = "2.3"         # Directory tree traversal
+flate2 = "1.0"          # Zlib compression for objects
 ```
-
-## 🚧 Limitations & Design Decisions
-
-### Local-Only Focus
-Mini Git focuses on **local repository operations** for educational clarity:
-- ✅ Clone, push, pull work between local repositories
-- ❌ Network protocols (HTTP, SSH, Git protocol) not implemented
-- 🎯 Demonstrates core Git concepts without network complexity
-
-### Simplified Features
-Some features are simplified for learning purposes:
-- Basic diff algorithm (not Myers algorithm)
-- Simplified merge conflict resolution
-- JSON object serialization (instead of Git's custom format)
-- No delta compression (for object storage clarity)
-
-### Production Considerations
-For production use, you would need:
-- Network protocol implementation
-- Advanced merge algorithms
-- Performance optimizations
-- Garbage collection
-- Hook system
-- Submodule support
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Add tests for new functionality
-5. Ensure all tests pass (`./test_minigit.sh`)
-6. Commit your changes (`git commit -m 'Add amazing feature'`)
-7. Push to the branch (`git push origin feature/amazing-feature`)
-8. Open a Pull Request
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Write tests for your changes
+4. Ensure all tests pass (`./test_minigit.sh`)
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
 
-## 📖 Learning Resources
+## 📚 Further Learning
 
-To understand the concepts implemented in Mini Git:
-
-- [Pro Git Book](https://git-scm.com/book) - Official Git documentation
+- [Pro Git Book](https://git-scm.com/book) - Complete Git reference
 - [Git Internals](https://git-scm.com/book/en/v2/Git-Internals-Plumbing-and-Porcelain) - How Git works internally
-- [Building Git](http://shop.oreilly.com/product/0636920041771.do) - Step-by-step Git implementation
+- [Building Git](https://shop.oreilly.com/product/0636920041771.do) - Git implementation guide
 
 ## 📜 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
-- Git community for the excellent design and documentation
-- Rust community for the amazing ecosystem
-- Educational resources that inspired this implementation
+- Git community for excellent design and documentation
+- Rust community for amazing development tools
+- Educational Git resources that inspired this implementation
 
 ***
-
 **Made with ❤️ and 🦀 Rust ❤️ by [Aarambh Dev Hub](https://youtube.com/@aarambhdevhub)**
 
-*Mini Git is an educational project designed to demonstrate Git's internal workings. For production use, please use the official Git implementation.*
+**🎯 Mini Git: Learn Git by building Git, one commit at a time!**
+
+*Perfect for students, developers, and anyone curious about how Git really works under the hood.*
