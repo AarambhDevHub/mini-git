@@ -40,7 +40,7 @@ A complete, educational implementation of Git version control system written in 
 
 ### Installation
 ```bash
-git clone <this-repository>
+git clone https://github.com/AarambhDevHub/mini-git.git
 cd mini_git
 cargo build --release
 ```
